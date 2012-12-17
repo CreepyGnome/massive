@@ -586,7 +586,7 @@ namespace Massive {
         public virtual void ValidatesPresenceOf(object value, string message = "Required") {
             if (value == null)
                 Errors.Add(message);
-            if (String.IsNullOrEmpty(value.ToString()))
+            else if (String.IsNullOrEmpty(value.ToString()))
                 Errors.Add(message);
         }
         //fun methods
