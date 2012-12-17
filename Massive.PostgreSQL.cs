@@ -660,8 +660,7 @@ namespace Massive.PostgreSQL
         public virtual bool BeforeSave(dynamic item) { return true; }
 
         //validation methods
-        public virtual void ValidatesPresenceOf(object value, string message = "Required")
-        {
+        public virtual void ValidatesPresenceOf(object value, string message = "Required") {
             if (value == null)
                 Errors.Add(message);
             else if (String.IsNullOrEmpty(value.ToString()))
@@ -677,16 +676,15 @@ namespace Massive.PostgreSQL
                 Errors.Add(message);
             }
         }
-        public virtual void ValidateIsCurrency(object value, string message = "Should be money")
-        {
-            if (value == null)
+        public virtual void ValidateIsCurrency(object value, string message = "Should be money") {
+            if (value == null) {
                 Errors.Add(message);
+                return;
+            }
             decimal val = decimal.MinValue;
             decimal.TryParse(value.ToString(), out val);
             if (val == decimal.MinValue)
                 Errors.Add(message);
-
-
         }
         public int Count()
         {

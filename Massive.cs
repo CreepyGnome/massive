@@ -598,14 +598,14 @@ namespace Massive {
             }
         }
         public virtual void ValidateIsCurrency(object value, string message = "Should be money") {
-            if (value == null)
+            if (value == null) {
                 Errors.Add(message);
+                return;
+            }
             decimal val = decimal.MinValue;
             decimal.TryParse(value.ToString(), out val);
             if (val == decimal.MinValue)
                 Errors.Add(message);
-
-
         }
         public int Count() {
             return Count(TableName);
