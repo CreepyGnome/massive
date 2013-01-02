@@ -125,7 +125,6 @@ namespace Massive.SQLite
             // if settings is null assume they provided full connecton string
             _connectionString = settings == null ? connectionStringOrName : settings.ConnectionString;
             _factory = DbProviderFactories.GetFactory(settings == null ? DefaultProviderName : settings.ProviderName);
-            _connectionString = ConfigurationManager.ConnectionStrings[connectionStringOrName].ConnectionString;
         }
 
         /// <summary>
