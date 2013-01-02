@@ -8,7 +8,6 @@ using System.Dynamic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.Data.SQLite;
 
 namespace Massive.SQLite
 {
@@ -120,14 +119,15 @@ namespace Massive.SQLite
             dynamic dm = new DynamicModel(connectionStringName);
             return dm;
         }
-        public DynamicModel(string connectionStringName, string tableName = "", string primaryKeyField = "")
+        private const string DefaultProviderName = "System.Data.SQLite";
+        public DynamicModel(string connectionStringOrName, string tableName = "", string primaryKeyField = "")
         {
-            TableName = tableName == "" ? this.GetType().Name : tableName;
-            PrimaryKeyField = string.IsNullOrEmpty(primaryKeyField) ? "ID" : primaryKeyField;
-            var _providerName = "System.Data.SQLite";
-            _factory = DbProviderFactories.GetFactory(_providerName);
-            ConnectionString = ConfigurationManager.ConnectionStrings[connectionStringName].ConnectionString;
-            _providerName = ConfigurationManager.ConnectionStrings[connectionStringName].ProviderName;
+            TableName = string.IsNullOrWhiteSpace(tableName) ? GetType().Name : tableName;
+            PrimaryKeyField = string.IsNullOrWhiteSpace(primaryKeyField) ? "ID" : primaryKeyField;
+            ConnectionStringSettings settings = ConfigurationManager.ConnectionStrings[connectionStringOrName];
+            // if settings is null assume they provided full connecton string
+            ConnectionString = settings == null ? connectionStringOrName : settings.ConnectionString;
+            _factory = DbProviderFactories.GetFactory(settings == null ? DefaultProviderName : settings.ProviderName);
         }
 
         /// <summary>
