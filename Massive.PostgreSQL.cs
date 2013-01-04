@@ -136,9 +136,8 @@ namespace Massive.PostgreSQL
     {
         DbProviderFactory _factory;
         string ConnectionString;
-        public static DynamicModel Open(string connectionStringName)
-        {
-            dynamic dm = new DynamicModel(connectionStringName);
+        public static DynamicModel Open(string connectionStringOrName) {
+            dynamic dm = new DynamicModel(connectionStringOrName);
             return dm;
         }
         private const string DefaultProviderName = "Npgsql";
