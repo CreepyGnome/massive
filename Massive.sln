@@ -3,6 +3,16 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Massive", "Massive\Massive.csproj", "{FF332F93-CBDF-45E6-A77E-616B3167A096}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{0628FAC9-F89D-47AD-ADB9-567B505AC0CC}"
+	ProjectSection(SolutionItems) = preProject
+		LICENSE.txt = LICENSE.txt
+		Massive.cs = Massive.cs
+		Massive.Oracle.cs = Massive.Oracle.cs
+		Massive.PostgreSQL.cs = Massive.PostgreSQL.cs
+		Massive.Sqlite.cs = Massive.Sqlite.cs
+		README.markdown = README.markdown
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(TeamFoundationVersionControl) = preSolution
 		SccNumberOfProjects = 2
