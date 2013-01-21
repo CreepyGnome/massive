@@ -593,6 +593,7 @@ namespace Massive {
                 using (var cmd = CreateInsertCommand(ex)) {
                     if (UseTransactions) {
                         using (var tx = conn.BeginTransaction()) {
+                            cmd.Connection = conn;
                             cmd.Transaction = tx;
                             cmd.ExecuteNonQuery();
                             tx.Commit();
