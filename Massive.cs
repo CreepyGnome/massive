@@ -109,13 +109,14 @@ namespace Massive {
     public class DynamicModel : DynamicObject {
         DbProviderFactory _factory;
         string ConnectionString;
-        public static DynamicModel Open(string connectionStringOrName) {
-            dynamic dm = new DynamicModel(connectionStringOrName);
+        public static DynamicModel Open(string connectionStringOrName, bool useTransactions = true) {
+            dynamic dm = new DynamicModel(connectionStringOrName, useTransactions: useTransactions);
             return dm;
         }
         private const string DefaultProviderName = "System.Data.SqlClient";
         public DynamicModel(string connectionStringOrName, string tableName = null,
-            string primaryKeyField = null, string descriptorField = null) {
+            string primaryKeyField = null, string descriptorField = null, bool useTransactions = true) {
+            UseTransactions = useTransactions;
             TableName = string.IsNullOrWhiteSpace(tableName) ? GetType().Name : tableName;
             PrimaryKeyField = string.IsNullOrWhiteSpace(primaryKeyField) ? "ID" : primaryKeyField;
             DescriptorField = descriptorField ?? string.Empty;
@@ -330,24 +331,40 @@ namespace Massive {
         public virtual int Execute(IEnumerable<DbCommand> commands) {
             var result = 0;
             using (var conn = OpenConnection()) {
-                using (var tx = conn.BeginTransaction()) {
-                    foreach (var cmd in commands) {
-                        cmd.Connection = conn;
-                        cmd.Transaction = tx;
-                        if (cmd.CommandType == CommandType.StoredProcedure) {
-                            cmd.ExecuteNonQuery();
-                            if (cmd.Parameters["@returnValue"].Value != null)
-                                result += Int32.Parse(cmd.Parameters["@returnValue"].Value.ToString());
-                            else
-                                result += -1;
-                        } else
-                            result += cmd.ExecuteNonQuery();
+                if (UseTransactions) {
+                    using (var tx = conn.BeginTransaction()) {
+                        Execute(conn, tx, commands);
+                        tx.Commit();
                     }
-                    tx.Commit();
                 }
+                else
+                    Execute(conn, null, commands);
             }
             return result;
         }
+
+        private int Execute(DbConnection connection, DbTransaction transaction, IEnumerable<DbCommand> commands)
+        {
+            var result = 0;
+            foreach (var cmd in commands)
+                using (cmd) {
+                    cmd.Connection = connection;
+                    if (transaction != null)
+                        cmd.Transaction = transaction;
+                    if (cmd.CommandType == CommandType.StoredProcedure) {
+                        cmd.ExecuteNonQuery();
+                        if (cmd.Parameters["@returnValue"].Value != null)
+                            result += Int32.Parse(cmd.Parameters["@returnValue"].Value.ToString());
+                        else
+                            result += -1;
+                    }
+                    else
+                        result += cmd.ExecuteNonQuery();
+                }
+            
+            return result;
+        }
+
         public virtual string PrimaryKeyField { get; set; }
         /// <summary>
         /// Conventionally introspects the object passed in for a field that 
@@ -366,6 +383,10 @@ namespace Massive {
             return result;
         }
         public virtual string TableName { get; set; }
+        /// <summary>
+        /// If true will use transactions to execute commands (Execute, Insert, Update, Delete); otherwise if false it wont.
+        /// </summary>
+        public virtual bool UseTransactions { get; set; }
         /// <summary>
         /// Returns all records complying with the passed-in WHERE clause and arguments, 
         /// ordered as specified, limited (TOP) by limit.
@@ -568,10 +589,19 @@ namespace Massive {
                 throw new InvalidOperationException("Can't insert: " + String.Join("; ", Errors.ToArray()));
             }
             if (BeforeSave(ex)) {
-                using (dynamic conn = OpenConnection()) {
-                    var cmd = CreateInsertCommand(ex);
-                    cmd.Connection = conn;
-                    cmd.ExecuteNonQuery();
+                using (dynamic conn = OpenConnection())
+                using (var cmd = CreateInsertCommand(ex)) {
+                    if (UseTransactions) {
+                        using (var tx = conn.BeginTransaction()) {
+                            cmd.Transaction = tx;
+                            cmd.ExecuteNonQuery();
+                            tx.Commit();
+                        }
+                    }
+                    else {
+                        cmd.Connection = conn;
+                        cmd.ExecuteNonQuery();
+                    }
                     cmd.CommandText = "SELECT @@IDENTITY as newID";
                     ex.ID = cmd.ExecuteScalar();
                     Inserted(ex);
